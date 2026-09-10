@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, CheckCircle, Bookmark, Flame, Star, ChevronDown, ChevronUp, Target } from 'lucide-react';
+import { BookOpen, CheckCircle, Bookmark, Flame, Star, ChevronDown, ChevronUp, Target, Users, ArrowUpRight, ArrowDownLeft, AlertCircle } from 'lucide-react';
 
 export default function StatsDashboard({ books, annualGoal = 20, onUpdateGoal }) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -10,6 +10,13 @@ export default function StatsDashboard({ books, annualGoal = 20, onUpdateGoal })
   const reading = books.filter(b => b.status === 'reading').length;
   const wantToRead = books.filter(b => b.status === 'want-to-read').length;
   const completed = books.filter(b => b.status === 'completed').length;
+  const lentCount = books.filter(b => b.loanStatus === 'lent').length;
+  const borrowedCount = books.filter(b => b.loanStatus === 'borrowed').length;
+  const overdueCount = books.filter(b => 
+    b.loanStatus !== 'none' && 
+    b.dueDate && 
+    new Date(b.dueDate) < new Date(new Date().setHours(0, 0, 0, 0))
+  ).length;
 
   const totalPagesRead = books.reduce((acc, b) => {
     if (b.status === 'completed') {
@@ -55,7 +62,7 @@ export default function StatsDashboard({ books, annualGoal = 20, onUpdateGoal })
       </div>
 
       {isExpanded && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4 pt-1">
           {/* Total Books */}
           <div className="bg-[#FAF8F5] rounded-xl p-3.5 border border-slate-200/60">
             <div className="flex items-center gap-2 text-slate-500 text-xs font-medium mb-1">
@@ -163,6 +170,40 @@ export default function StatsDashboard({ books, annualGoal = 20, onUpdateGoal })
               <div className="text-[10px] text-amber-800 text-right mt-0.5 font-medium">
                 {goalProgress}% achieved
               </div>
+            </div>
+          </div>
+
+          {/* Lending & Borrowing Card */}
+          <div className="bg-[#FAF8F5] rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium mb-1">
+                <Users className="w-3.5 h-3.5 text-amber-700" />
+                <span>Loans</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold font-serif text-slate-900 flex items-center gap-0.5" title="Lent Out">
+                  <ArrowUpRight className="w-3.5 h-3.5 text-amber-700" />
+                  {lentCount}
+                </span>
+                <span className="text-slate-300 font-light">|</span>
+                <span className="text-xl font-bold font-serif text-slate-900 flex items-center gap-0.5" title="Borrowed">
+                  <ArrowDownLeft className="w-3.5 h-3.5 text-indigo-700" />
+                  {borrowedCount}
+                </span>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-slate-500 mt-2">
+              {overdueCount > 0 ? (
+                <span className="text-rose-600 font-bold flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {overdueCount} overdue!
+                </span>
+              ) : (
+                <span className="text-slate-400">
+                  {lentCount} lent • {borrowedCount} borrowed
+                </span>
+              )}
             </div>
           </div>
 

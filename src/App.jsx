@@ -22,6 +22,7 @@ export default function App() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [selectedFormat, setSelectedFormat] = useState('all');
+  const [selectedLoanStatus, setSelectedLoanStatus] = useState('all');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   // Modals state
@@ -63,14 +64,16 @@ export default function App() {
   const filteredAndSortedBooks = useMemo(() => {
     let result = [...books];
 
-    // Search query filter
+    // Search query filter (searches title, author, genre, notes, and friend's name!)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(b =>
         (b.title && b.title.toLowerCase().includes(q)) ||
         (b.author && b.author.toLowerCase().includes(q)) ||
         (b.genre && b.genre.toLowerCase().includes(q)) ||
-        (b.notes && b.notes.toLowerCase().includes(q))
+        (b.notes && b.notes.toLowerCase().includes(q)) ||
+        (b.friendName && b.friendName.toLowerCase().includes(q)) ||
+        (b.loanNotes && b.loanNotes.toLowerCase().includes(q))
       );
     }
 
@@ -87,6 +90,15 @@ export default function App() {
     // Format filter
     if (selectedFormat !== 'all') {
       result = result.filter(b => b.format === selectedFormat);
+    }
+
+    // Loan status filter
+    if (selectedLoanStatus !== 'all') {
+      if (selectedLoanStatus === 'in-library') {
+        result = result.filter(b => !b.loanStatus || b.loanStatus === 'none');
+      } else {
+        result = result.filter(b => b.loanStatus === selectedLoanStatus);
+      }
     }
 
     // Favorites filter
@@ -208,10 +220,37 @@ export default function App() {
     }));
   };
 
+  const handleReturnBook = (id) => {
+    setBooks(prev => prev.map(b => {
+      if (b.id === id) {
+        return {
+          ...b,
+          loanStatus: 'none',
+          friendName: '',
+          loanDate: '',
+          dueDate: '',
+          loanNotes: ''
+        };
+      }
+      return b;
+    }));
+    if (selectedBookForDetails && selectedBookForDetails.id === id) {
+      setSelectedBookForDetails(prev => ({
+        ...prev,
+        loanStatus: 'none',
+        friendName: '',
+        loanDate: '',
+        dueDate: '',
+        loanNotes: ''
+      }));
+    }
+  };
+
   const handleResetFilters = () => {
     setSelectedStatus('all');
     setSelectedGenre('all');
     setSelectedFormat('all');
+    setSelectedLoanStatus('all');
     setFavoritesOnly(false);
     setSearchQuery('');
   };
@@ -247,6 +286,8 @@ export default function App() {
           setSelectedGenre={setSelectedGenre}
           selectedFormat={selectedFormat}
           setSelectedFormat={setSelectedFormat}
+          selectedLoanStatus={selectedLoanStatus}
+          setSelectedLoanStatus={setSelectedLoanStatus}
           favoritesOnly={favoritesOnly}
           setFavoritesOnly={setFavoritesOnly}
           sortBy={sortBy}
@@ -268,6 +309,7 @@ export default function App() {
                   onDelete={(id, title) => setDeleteConfirmation({ id, title })}
                   onToggleFavorite={handleToggleFavorite}
                   onQuickPageUpdate={handleQuickPageUpdate}
+                  onReturnBook={handleReturnBook}
                 />
               ))}
             </div>
@@ -279,6 +321,7 @@ export default function App() {
               onDelete={(id, title) => setDeleteConfirmation({ id, title })}
               onToggleFavorite={handleToggleFavorite}
               onUpdateStatus={handleUpdateStatus}
+              onReturnBook={handleReturnBook}
             />
           )
         ) : (
@@ -338,6 +381,7 @@ export default function App() {
         onToggleFavorite={handleToggleFavorite}
         onUpdateProgress={handleUpdateProgress}
         onUpdateStatus={handleUpdateStatus}
+        onReturnBook={handleReturnBook}
       />
 
       {/* Import / Export Modal */}

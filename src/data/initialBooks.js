@@ -14,7 +14,12 @@ export const INITIAL_BOOKS = [
     favorite: true,
     startDate: '2026-08-15',
     finishDate: '',
-    createdAt: '2026-08-15T10:00:00.000Z'
+    createdAt: '2026-08-15T10:00:00.000Z',
+    loanStatus: 'none', // 'none' | 'lent' | 'borrowed'
+    friendName: '',
+    loanDate: '',
+    dueDate: '',
+    loanNotes: ''
   },
   {
     id: 'book-2',
@@ -31,7 +36,12 @@ export const INITIAL_BOOKS = [
     favorite: true,
     startDate: '2026-07-01',
     finishDate: '2026-07-12',
-    createdAt: '2026-07-01T14:30:00.000Z'
+    createdAt: '2026-07-01T14:30:00.000Z',
+    loanStatus: 'none',
+    friendName: '',
+    loanDate: '',
+    dueDate: '',
+    loanNotes: ''
   },
   {
     id: 'book-3',
@@ -48,7 +58,12 @@ export const INITIAL_BOOKS = [
     favorite: false,
     startDate: '2026-08-20',
     finishDate: '',
-    createdAt: '2026-08-20T09:15:00.000Z'
+    createdAt: '2026-08-20T09:15:00.000Z',
+    loanStatus: 'none',
+    friendName: '',
+    loanDate: '',
+    dueDate: '',
+    loanNotes: ''
   },
   {
     id: 'book-4',
@@ -65,7 +80,12 @@ export const INITIAL_BOOKS = [
     favorite: false,
     startDate: '',
     finishDate: '',
-    createdAt: '2026-09-01T18:00:00.000Z'
+    createdAt: '2026-09-01T18:00:00.000Z',
+    loanStatus: 'lent',
+    friendName: 'Sarah Jenkins',
+    loanDate: '2026-09-02',
+    dueDate: '2026-09-25',
+    loanNotes: 'Lent to Sarah for her book club discussion.'
   },
   {
     id: 'book-5',
@@ -82,7 +102,12 @@ export const INITIAL_BOOKS = [
     favorite: false,
     startDate: '2026-05-10',
     finishDate: '2026-06-05',
-    createdAt: '2026-05-10T11:20:00.000Z'
+    createdAt: '2026-05-10T11:20:00.000Z',
+    loanStatus: 'none',
+    friendName: '',
+    loanDate: '',
+    dueDate: '',
+    loanNotes: ''
   },
   {
     id: 'book-6',
@@ -99,7 +124,12 @@ export const INITIAL_BOOKS = [
     favorite: true,
     startDate: '',
     finishDate: '',
-    createdAt: '2026-09-05T12:00:00.000Z'
+    createdAt: '2026-09-05T12:00:00.000Z',
+    loanStatus: 'borrowed',
+    friendName: 'Michael Chen',
+    loanDate: '2026-09-06',
+    dueDate: '2026-10-01',
+    loanNotes: 'Borrowed hardcover copy from Michael.'
   }
 ];
 
@@ -137,3 +167,9 @@ export const FORMAT_OPTIONS = [
   'E-book',
   'Audiobook'
 ];
+
+export const LOAN_STATUS_CONFIG = {
+  'none': { label: 'In Library', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+  'lent': { label: 'Lent Out', color: 'bg-amber-100 text-amber-900 border-amber-300' },
+  'borrowed': { label: 'Borrowed', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
+};

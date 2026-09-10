@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Sparkles, BookOpen, Star, Loader2, Image, Check } from 'lucide-react';
+import { X, Search, Sparkles, BookOpen, Star, Loader2, Image, Check, Users, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { GENRE_OPTIONS, FORMAT_OPTIONS } from '../data/initialBooks';
 import { searchBooksOnline } from '../services/bookSearchService';
 
@@ -31,7 +31,12 @@ export default function BookModal({
     notes: '',
     favorite: false,
     startDate: '',
-    finishDate: ''
+    finishDate: '',
+    loanStatus: 'none', // 'none' | 'lent' | 'borrowed'
+    friendName: '',
+    loanDate: '',
+    dueDate: '',
+    loanNotes: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -51,7 +56,12 @@ export default function BookModal({
         notes: editingBook.notes || '',
         favorite: Boolean(editingBook.favorite),
         startDate: editingBook.startDate || '',
-        finishDate: editingBook.finishDate || ''
+        finishDate: editingBook.finishDate || '',
+        loanStatus: editingBook.loanStatus || 'none',
+        friendName: editingBook.friendName || '',
+        loanDate: editingBook.loanDate || '',
+        dueDate: editingBook.dueDate || '',
+        loanNotes: editingBook.loanNotes || ''
       });
       setActiveTab('manual');
     } else {
@@ -68,7 +78,12 @@ export default function BookModal({
         notes: '',
         favorite: false,
         startDate: '',
-        finishDate: ''
+        finishDate: '',
+        loanStatus: 'none',
+        friendName: '',
+        loanDate: '',
+        dueDate: '',
+        loanNotes: ''
       });
       setActiveTab('search');
     }
@@ -119,6 +134,9 @@ export default function BookModal({
     if (formData.currentPage < 0) errs.currentPage = 'Current page cannot be negative';
     if (formData.currentPage > formData.pages) {
       errs.currentPage = 'Current page cannot exceed total pages';
+    }
+    if (formData.loanStatus !== 'none' && !formData.friendName.trim()) {
+      errs.friendName = "Friend's name is required when book is lent or borrowed";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -499,6 +517,123 @@ export default function BookModal({
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600"
                   />
                 </div>
+              </div>
+
+              {/* Lending & Borrowing Tracker Section */}
+              <div className="bg-[#FAF8F5] p-4 rounded-xl border border-slate-200/90 space-y-3">
+                <div className="flex items-center gap-2 text-slate-800 font-semibold text-xs uppercase tracking-wider">
+                  <Users className="w-4 h-4 text-amber-700" />
+                  <span>Lending & Borrowing Tracker</span>
+                </div>
+                
+                {/* Loan Status Selector */}
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, loanStatus: 'none', friendName: '', loanDate: '', dueDate: '', loanNotes: '' })}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 ${
+                      formData.loanStatus === 'none'
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>In Library</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ 
+                      ...formData, 
+                      loanStatus: 'lent', 
+                      loanDate: formData.loanDate || new Date().toISOString().split('T')[0] 
+                    })}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 ${
+                      formData.loanStatus === 'lent'
+                        ? 'bg-amber-800 text-white border-amber-800 shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                    <span>Lent to Friend</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ 
+                      ...formData, 
+                      loanStatus: 'borrowed', 
+                      loanDate: formData.loanDate || new Date().toISOString().split('T')[0] 
+                    })}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 ${
+                      formData.loanStatus === 'borrowed'
+                        ? 'bg-indigo-800 text-white border-indigo-800 shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <ArrowDownLeft className="w-3.5 h-3.5" />
+                    <span>Borrowed</span>
+                  </button>
+                </div>
+
+                {formData.loanStatus !== 'none' && (
+                  <div className="pt-2 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                          {formData.loanStatus === 'lent' ? 'Friend Lent To' : 'Friend Borrowed From'} <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.friendName}
+                          onChange={(e) => setFormData({ ...formData, friendName: e.target.value })}
+                          placeholder="e.g. Sarah Jenkins, Rahul"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600"
+                        />
+                        {errors.friendName && <p className="text-rose-500 text-xs mt-1">{errors.friendName}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                          Date {formData.loanStatus === 'lent' ? 'Lent' : 'Borrowed'}
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.loanDate}
+                          onChange={(e) => setFormData({ ...formData, loanDate: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                          Expected Return Date (Optional)
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.dueDate}
+                          onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                          Loan Note (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.loanNotes}
+                          onChange={(e) => setFormData({ ...formData, loanNotes: e.target.value })}
+                          placeholder="e.g. Lent for book club, return after exams"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Personal Notes & Key Takeaways */}

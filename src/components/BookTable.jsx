@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Edit2, Trash2, ExternalLink, BookOpen } from 'lucide-react';
+import { Star, Edit2, Trash2, ExternalLink, BookOpen, ArrowUpRight, ArrowDownLeft, RotateCcw } from 'lucide-react';
 import { STATUS_CONFIG } from '../data/initialBooks';
 
 export default function BookTable({
@@ -8,7 +8,8 @@ export default function BookTable({
   onEdit,
   onDelete,
   onToggleFavorite,
-  onUpdateStatus
+  onUpdateStatus,
+  onReturnBook
 }) {
   if (books.length === 0) {
     return null;
@@ -25,6 +26,7 @@ export default function BookTable({
               <th className="py-3 px-4">Book & Author</th>
               <th className="py-3 px-4">Genre / Format</th>
               <th className="py-3 px-4">Status</th>
+              <th className="py-3 px-4">Lending</th>
               <th className="py-3 px-4">Progress</th>
               <th className="py-3 px-4">Rating</th>
               <th className="py-3 px-4 text-right">Actions</th>
@@ -105,6 +107,31 @@ export default function BookTable({
                       <option value="on-hold">On Hold</option>
                       <option value="dropped">Dropped</option>
                     </select>
+                  </td>
+
+                  {/* Lending Status */}
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    {book.loanStatus !== 'none' ? (
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border flex items-center gap-1 ${
+                          book.loanStatus === 'lent'
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : 'bg-indigo-100 text-indigo-900 border-indigo-300'
+                        }`}>
+                          {book.loanStatus === 'lent' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
+                          <span>{book.loanStatus === 'lent' ? `Lent: ${book.friendName}` : `From: ${book.friendName}`}</span>
+                        </span>
+                        <button
+                          onClick={() => onReturnBook(book.id)}
+                          className="p-1 hover:bg-slate-200 text-slate-500 hover:text-slate-900 rounded transition-colors"
+                          title="Mark as returned to library"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">In Library</span>
+                    )}
                   </td>
 
                   {/* Progress */}

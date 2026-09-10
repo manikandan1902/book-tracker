@@ -11,7 +11,16 @@ export const storageService = {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_BOOKS));
         return INITIAL_BOOKS;
       }
-      return JSON.parse(data);
+      const books = JSON.parse(data);
+      // Migrate existing books that lack loan properties
+      return books.map(b => ({
+        ...b,
+        loanStatus: b.loanStatus || 'none',
+        friendName: b.friendName || '',
+        loanDate: b.loanDate || '',
+        dueDate: b.dueDate || '',
+        loanNotes: b.loanNotes || ''
+      }));
     } catch (e) {
       console.error('Error reading books from localStorage:', e);
       return INITIAL_BOOKS;
@@ -55,7 +64,10 @@ export const storageService = {
   },
 
   exportToCSV: (books) => {
-    const headers = ['Title', 'Author', 'Genre', 'Status', 'Format', 'Rating', 'Pages', 'CurrentPage', 'StartDate', 'FinishDate', 'Notes'];
+    const headers = [
+      'Title', 'Author', 'Genre', 'Status', 'Format', 'Rating', 'Pages', 'CurrentPage', 
+      'StartDate', 'FinishDate', 'LoanStatus', 'FriendName', 'LoanDate', 'DueDate', 'LoanNotes', 'Notes'
+    ];
     const rows = books.map(b => [
       `"${(b.title || '').replace(/"/g, '""')}"`,
       `"${(b.author || '').replace(/"/g, '""')}"`,
@@ -67,6 +79,11 @@ export const storageService = {
       b.currentPage || 0,
       `"${b.startDate || ''}"`,
       `"${b.finishDate || ''}"`,
+      `"${b.loanStatus || 'none'}"`,
+      `"${(b.friendName || '').replace(/"/g, '""')}"`,
+      `"${b.loanDate || ''}"`,
+      `"${b.dueDate || ''}"`,
+      `"${(b.loanNotes || '').replace(/"/g, '""')}"`,
       `"${(b.notes || '').replace(/"/g, '""')}"`
     ]);
 
@@ -106,7 +123,12 @@ export const storageService = {
             favorite: Boolean(book.favorite),
             startDate: book.startDate || '',
             finishDate: book.finishDate || '',
-            createdAt: book.createdAt || new Date().toISOString()
+            createdAt: book.createdAt || new Date().toISOString(),
+            loanStatus: ['none', 'lent', 'borrowed'].includes(book.loanStatus) ? book.loanStatus : 'none',
+            friendName: book.friendName || '',
+            loanDate: book.loanDate || '',
+            dueDate: book.dueDate || '',
+            loanNotes: book.loanNotes || ''
           }));
           resolve(validated);
         } catch (err) {

@@ -9,6 +9,8 @@ export default function FilterBar({
   setSelectedGenre,
   selectedFormat,
   setSelectedFormat,
+  selectedLoanStatus,
+  setSelectedLoanStatus,
   favoritesOnly,
   setFavoritesOnly,
   sortBy,
@@ -20,6 +22,7 @@ export default function FilterBar({
     selectedStatus !== 'all' || 
     selectedGenre !== 'all' || 
     selectedFormat !== 'all' || 
+    selectedLoanStatus !== 'all' ||
     favoritesOnly;
 
   return (
@@ -86,6 +89,23 @@ export default function FilterBar({
             {FORMAT_OPTIONS.map((f) => (
               <option key={f} value={f}>{f}</option>
             ))}
+          </select>
+
+          {/* Lending Status Dropdown */}
+          <select
+            value={selectedLoanStatus}
+            onChange={(e) => setSelectedLoanStatus(e.target.value)}
+            aria-label="Filter by lending status"
+            className={`px-2.5 py-1.5 border rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 cursor-pointer ${
+              selectedLoanStatus !== 'all'
+                ? 'bg-amber-100/80 border-amber-300 text-amber-950 font-semibold shadow-2xs'
+                : 'bg-[#FAF8F5] border-slate-200 text-slate-700'
+            }`}
+          >
+            <option value="all">All Library (Loans & Owned)</option>
+            <option value="lent">📤 Lent to Friends</option>
+            <option value="borrowed">📥 Borrowed from Friends</option>
+            <option value="in-library">📚 In Library (Not on loan)</option>
           </select>
 
           {/* Favorite Toggle */}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, Calendar, BookOpen, Edit2, Trash2, CheckCircle2, Bookmark, ArrowRight, Share2, Plus, Minus } from 'lucide-react';
+import { X, Star, Calendar, BookOpen, Edit2, Trash2, CheckCircle2, Bookmark, ArrowRight, Share2, Plus, Minus, ArrowUpRight, ArrowDownLeft, RotateCcw, Users, AlertCircle } from 'lucide-react';
 import { STATUS_CONFIG } from '../data/initialBooks';
 
 export default function BookDetailsModal({
@@ -10,12 +10,18 @@ export default function BookDetailsModal({
   onDelete,
   onToggleFavorite,
   onUpdateProgress,
-  onUpdateStatus
+  onUpdateStatus,
+  onReturnBook
 }) {
   if (!isOpen || !book) return null;
 
   const [currentPagesRead, setCurrentPagesRead] = useState(book.currentPage || 0);
   const statusInfo = STATUS_CONFIG[book.status] || STATUS_CONFIG['want-to-read'];
+  const isOverdue = Boolean(
+    book.loanStatus !== 'none' && 
+    book.dueDate && 
+    new Date(book.dueDate) < new Date(new Date().setHours(0, 0, 0, 0))
+  );
   const percent = book.pages > 0 ? Math.min(100, Math.round((currentPagesRead / book.pages) * 100)) : 0;
 
   const handleApplyProgress = (newPages) => {
@@ -204,6 +210,82 @@ export default function BookDetailsModal({
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Lending & Borrowing Status Card */}
+          <div className="bg-[#FAF8F5] p-4 rounded-xl border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-amber-800" />
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Lending & Borrowing Status
+                </span>
+              </div>
+              {book.loanStatus !== 'none' && (
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                  book.loanStatus === 'lent'
+                    ? 'bg-amber-100 text-amber-900 border-amber-300'
+                    : 'bg-indigo-100 text-indigo-900 border-indigo-300'
+                }`}>
+                  {book.loanStatus === 'lent' ? 'Lent to Friend' : 'Borrowed from Friend'}
+                </span>
+              )}
+            </div>
+
+            {book.loanStatus !== 'none' ? (
+              <div className="space-y-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-white p-3 rounded-lg border border-slate-200">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">
+                      {book.loanStatus === 'lent' ? 'Lent To' : 'Borrowed From'}
+                    </span>
+                    <span className="font-bold text-slate-900 text-sm">{book.friendName}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Loan Date</span>
+                    <span className="font-medium text-slate-800">{book.loanDate || 'Not specified'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Due / Return Date</span>
+                    <span className={`font-medium ${isOverdue ? 'text-rose-600 font-bold' : 'text-slate-800'}`}>
+                      {book.dueDate || 'No set date'} {isOverdue && '(Overdue!)'}
+                    </span>
+                  </div>
+                </div>
+
+                {book.loanNotes && (
+                  <div className="text-xs text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200">
+                    <span className="font-semibold text-slate-700">Loan note: </span>
+                    <span>{book.loanNotes}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end pt-1">
+                  <button
+                    onClick={() => {
+                      onReturnBook(book.id);
+                    }}
+                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Mark as Returned to Library</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between text-xs text-slate-500 py-1">
+                <span>This book is currently in your personal library.</span>
+                <button
+                  onClick={() => {
+                    onClose();
+                    onEdit(book);
+                  }}
+                  className="text-amber-800 hover:text-amber-950 font-semibold underline"
+                >
+                  Lend to a friend
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Notes & Key Takeaways */}
