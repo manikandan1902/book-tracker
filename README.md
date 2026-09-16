@@ -30,6 +30,19 @@ A modern, fast, and responsive web application to organize, track, and maintain 
   - All data is saved automatically to your browser's `localStorage` (no server or database setup required).
   - **Export to JSON**: Complete backup file you can store or move to another machine.
   - **Export to CSV**: Formatted for Excel or Google Sheets.
+- **GitHub Sync**:
+  - The data-management panel can load and save the library as `data/books.json` in a GitHub repository.
+  - Public repositories can be read automatically from any browser.
+  - Saving from GitHub Pages requires a fine-grained GitHub token with `Contents: Read and write` permission for this repository.
+
+### Configure GitHub Sync
+
+1. Create a fine-grained token at GitHub **Settings > Developer settings > Personal access tokens**.
+2. Limit it to this repository and grant only **Contents: Read and write** access.
+3. Open **Backup & Data Management** in the app and enter the repository owner, repository, branch, and `data/books.json` path.
+4. Enter the token and choose **Save to GitHub**. Later visits will load the public file automatically.
+
+GitHub Pages is a static host, so it cannot securely authenticate writes by itself. The token is stored only in that browser's local storage and is never committed to the repository. For stronger security or multi-user access, move the GitHub API calls behind a serverless backend or OAuth flow.
   - **Import JSON**: Restore your entire library anytime.
   - Pre-loaded with curated sample books to explore right away.
 

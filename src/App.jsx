@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Navbar from './components/Navbar';
 import StatsDashboard from './components/StatsDashboard';
 import FilterBar from './components/FilterBar';
@@ -8,11 +8,15 @@ import BookModal from './components/BookModal';
 import BookDetailsModal from './components/BookDetailsModal';
 import ImportExportModal from './components/ImportExportModal';
 import { storageService } from './services/storageService';
+import { githubSyncService } from './services/githubSyncService';
 import { BookOpen, Plus, Sparkles, Trash2 } from 'lucide-react';
 
 export default function App() {
   const [books, setBooks] = useState(() => storageService.getBooks());
   const [prefs, setPrefs] = useState(() => storageService.getPrefs());
+  const [githubConfig, setGithubConfig] = useState(() => githubSyncService.getConfig());
+  const [syncStatus, setSyncStatus] = useState({ type: '', message: '' });
+  const isRemoteLoaded = useRef(false);
 
   const [viewMode, setViewMode] = useState(prefs.viewMode || 'grid');
   const [annualGoal, setAnnualGoal] = useState(prefs.annualGoal || 20);
@@ -35,7 +39,44 @@ export default function App() {
   // Persist books
   useEffect(() => {
     storageService.saveBooks(books);
-  }, [books]);
+    if (!isRemoteLoaded.current || !githubConfig.token) return;
+
+    let cancelled = false;
+    githubSyncService.saveBooks(books, githubConfig)
+      .then(() => {
+        if (!cancelled) setSyncStatus({ type: 'success', message: 'Saved to GitHub.' });
+      })
+      .catch((error) => {
+        if (!cancelled) setSyncStatus({ type: 'error', message: error.message });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [books, githubConfig]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const config = githubSyncService.getConfig();
+
+    githubSyncService.loadBooks(config)
+      .then((remoteBooks) => {
+        if (!cancelled && remoteBooks) {
+          setBooks(remoteBooks);
+          setSyncStatus({ type: 'success', message: 'Loaded from GitHub.' });
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) setSyncStatus({ type: 'error', message: error.message });
+      })
+      .finally(() => {
+        if (!cancelled) isRemoteLoaded.current = true;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Persist preferences
   useEffect(() => {
@@ -390,6 +431,14 @@ export default function App() {
         onClose={() => setIsImportExportOpen(false)}
         books={books}
         onUpdateLibrary={(newBooks) => setBooks(newBooks)}
+        githubConfig={githubConfig}
+        syncStatus={syncStatus}
+        onSaveGithubConfig={(config) => {
+          const savedConfig = githubSyncService.saveConfig(config);
+          setGithubConfig(savedConfig);
+          setSyncStatus({ type: '', message: '' });
+        }}
+        onSyncStatusChange={setSyncStatus}
       />
 
       {/* Delete Confirmation Dialog */}

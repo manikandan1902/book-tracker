@@ -1,19 +1,29 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, Upload, FileText, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Download, Upload, FileText, RefreshCw, CheckCircle2, AlertCircle, Github } from 'lucide-react';
 import { storageService } from '../services/storageService';
+import { githubSyncService } from '../services/githubSyncService';
 import { INITIAL_BOOKS } from '../data/initialBooks';
 
 export default function ImportExportModal({
   isOpen,
   onClose,
   books,
-  onUpdateLibrary
+  onUpdateLibrary,
+  githubConfig,
+  syncStatus,
+  onSaveGithubConfig,
+  onSyncStatusChange
 }) {
-  if (!isOpen) return null;
-
   const fileInputRef = useRef(null);
   const [importStatus, setImportStatus] = useState({ type: '', message: '' });
   const [isResetConfirm, setIsResetConfirm] = useState(false);
+  const [githubForm, setGithubForm] = useState(githubConfig);
+
+  React.useEffect(() => {
+    setGithubForm(githubConfig);
+  }, [githubConfig]);
+
+  if (!isOpen) return null;
 
   const handleExportJSON = () => {
     storageService.exportToJSON(books);
@@ -55,6 +65,32 @@ export default function ImportExportModal({
     });
   };
 
+  const handleLoadFromGithub = async () => {
+    onSyncStatusChange({ type: '', message: '' });
+    try {
+      const booksFromGithub = await githubSyncService.loadBooks(githubForm);
+      if (!booksFromGithub) {
+        throw new Error('No GitHub data file exists yet. Save this library first.');
+      }
+      onUpdateLibrary(booksFromGithub);
+      onSaveGithubConfig(githubForm);
+      onSyncStatusChange({ type: 'success', message: `Loaded ${booksFromGithub.length} books from GitHub.` });
+    } catch (error) {
+      onSyncStatusChange({ type: 'error', message: error.message });
+    }
+  };
+
+  const handleSaveToGithub = async () => {
+    onSyncStatusChange({ type: '', message: '' });
+    try {
+      onSaveGithubConfig(githubForm);
+      await githubSyncService.saveBooks(books, githubForm);
+      onSyncStatusChange({ type: 'success', message: 'Library saved to GitHub.' });
+    } catch (error) {
+      onSyncStatusChange({ type: 'error', message: error.message });
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div 
@@ -87,6 +123,17 @@ export default function ImportExportModal({
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             )}
             <span>{importStatus.message}</span>
+          </div>
+        )}
+
+        {syncStatus?.message && (
+          <div className={`p-4 text-xs font-medium flex items-center gap-2 ${
+            syncStatus.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-b border-emerald-100'
+              : 'bg-rose-50 text-rose-800 border-b border-rose-100'
+          }`}>
+            {syncStatus.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
+            <span>{syncStatus.message}</span>
           </div>
         )}
 
@@ -150,6 +197,60 @@ export default function ImportExportModal({
               <Upload className="w-4 h-4 text-amber-800" />
               <span>Select JSON Backup File to Import</span>
             </button>
+          </div>
+
+          {/* GitHub Sync Section */}
+          <div className="pt-4 border-t border-slate-100">
+            <div className="flex items-center gap-2 mb-2">
+              <Github className="w-4 h-4 text-slate-700" />
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Sync Across Browsers with GitHub
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 mb-3">
+              Your library is stored in a JSON file in your GitHub repository. Public repositories can be read anywhere; saving requires a fine-grained token with Contents read/write access.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ['owner', 'GitHub owner'],
+                ['repo', 'Repository'],
+                ['branch', 'Branch'],
+                ['path', 'File path']
+              ].map(([field, label]) => (
+                <label key={field} className="text-[10px] font-semibold text-slate-500">
+                  {label}
+                  <input
+                    value={githubForm[field]}
+                    onChange={(event) => setGithubForm(prev => ({ ...prev, [field]: event.target.value }))}
+                    className="mt-1 w-full px-2.5 py-2 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600"
+                  />
+                </label>
+              ))}
+            </div>
+            <label className="block mt-2 text-[10px] font-semibold text-slate-500">
+              Fine-grained GitHub token
+              <input
+                type="password"
+                value={githubForm.token}
+                onChange={(event) => setGithubForm(prev => ({ ...prev, token: event.target.value }))}
+                placeholder="Required for saving"
+                className="mt-1 w-full px-2.5 py-2 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600"
+              />
+            </label>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={handleLoadFromGithub}
+                className="flex-1 py-2 px-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Load from GitHub
+              </button>
+              <button
+                onClick={handleSaveToGithub}
+                className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 rounded-lg text-xs font-semibold text-white flex items-center justify-center gap-2"
+              >
+                <Github className="w-3.5 h-3.5" /> Save to GitHub
+              </button>
+            </div>
           </div>
 
           {/* Reset Section */}
