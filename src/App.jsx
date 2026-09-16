@@ -17,6 +17,11 @@ export default function App() {
   const [githubConfig, setGithubConfig] = useState(() => githubSyncService.getConfig());
   const [syncStatus, setSyncStatus] = useState({ type: '', message: '' });
   const isRemoteLoaded = useRef(false);
+  const githubConfigRef = useRef(githubConfig);
+
+  useEffect(() => {
+    githubConfigRef.current = githubConfig;
+  }, [githubConfig]);
 
   const [viewMode, setViewMode] = useState(prefs.viewMode || 'grid');
   const [annualGoal, setAnnualGoal] = useState(prefs.annualGoal || 20);
@@ -39,10 +44,11 @@ export default function App() {
   // Persist books
   useEffect(() => {
     storageService.saveBooks(books);
-    if (!isRemoteLoaded.current || !githubConfig.token) return;
+    const currentGithubConfig = githubConfigRef.current;
+    if (!isRemoteLoaded.current || !currentGithubConfig.token) return;
 
     let cancelled = false;
-    githubSyncService.saveBooks(books, githubConfig)
+    githubSyncService.saveBooks(books, currentGithubConfig)
       .then(() => {
         if (!cancelled) setSyncStatus({ type: 'success', message: 'Saved to GitHub.' });
       })
@@ -53,7 +59,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [books, githubConfig]);
+  }, [books]);
 
   useEffect(() => {
     let cancelled = false;

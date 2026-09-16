@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, Upload, FileText, RefreshCw, CheckCircle2, AlertCircle, Github } from 'lucide-react';
+import { X, Download, Upload, FileText, RefreshCw, CheckCircle2, AlertCircle, Github, Loader2 } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { githubSyncService } from '../services/githubSyncService';
 import { INITIAL_BOOKS } from '../data/initialBooks';
@@ -18,6 +18,7 @@ export default function ImportExportModal({
   const [importStatus, setImportStatus] = useState({ type: '', message: '' });
   const [isResetConfirm, setIsResetConfirm] = useState(false);
   const [githubForm, setGithubForm] = useState(githubConfig);
+  const [isGithubBusy, setIsGithubBusy] = useState(false);
 
   React.useEffect(() => {
     setGithubForm(githubConfig);
@@ -66,6 +67,8 @@ export default function ImportExportModal({
   };
 
   const handleLoadFromGithub = async () => {
+    if (isGithubBusy) return;
+    setIsGithubBusy(true);
     onSyncStatusChange({ type: '', message: '' });
     try {
       const booksFromGithub = await githubSyncService.loadBooks(githubForm);
@@ -77,24 +80,30 @@ export default function ImportExportModal({
       onSyncStatusChange({ type: 'success', message: `Loaded ${booksFromGithub.length} books from GitHub.` });
     } catch (error) {
       onSyncStatusChange({ type: 'error', message: error.message });
+    } finally {
+      setIsGithubBusy(false);
     }
   };
 
   const handleSaveToGithub = async () => {
+    if (isGithubBusy) return;
+    setIsGithubBusy(true);
     onSyncStatusChange({ type: '', message: '' });
     try {
-      onSaveGithubConfig(githubForm);
       await githubSyncService.saveBooks(books, githubForm);
+      onSaveGithubConfig(githubForm);
       onSyncStatusChange({ type: 'success', message: 'Library saved to GitHub.' });
     } catch (error) {
       onSyncStatusChange({ type: 'error', message: error.message });
+    } finally {
+      setIsGithubBusy(false);
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div 
-        className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden"
+        className="bg-white rounded-2xl max-w-lg w-full max-h-[calc(100vh-2rem)] flex flex-col border border-slate-200 shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -137,7 +146,7 @@ export default function ImportExportModal({
           </div>
         )}
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto">
           {/* Export Section */}
           <div>
             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
@@ -240,15 +249,19 @@ export default function ImportExportModal({
             <div className="flex gap-2 mt-3">
               <button
                 onClick={handleLoadFromGithub}
+                disabled={isGithubBusy}
                 className="flex-1 py-2 px-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 flex items-center justify-center gap-2"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Load from GitHub
+                {isGithubBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                Load from GitHub
               </button>
               <button
                 onClick={handleSaveToGithub}
+                disabled={isGithubBusy}
                 className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 rounded-lg text-xs font-semibold text-white flex items-center justify-center gap-2"
               >
-                <Github className="w-3.5 h-3.5" /> Save to GitHub
+                {isGithubBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Github className="w-3.5 h-3.5" />}
+                {isGithubBusy ? 'Saving...' : 'Save to GitHub'}
               </button>
             </div>
           </div>

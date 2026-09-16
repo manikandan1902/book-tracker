@@ -30,10 +30,27 @@ const getApiUrl = ({ owner, repo, path }) =>
 
 const getHeaders = (token) => ({
   Accept: 'application/vnd.github+json',
+  'X-GitHub-Api-Version': '2022-11-28',
   ...(token ? { Authorization: `Bearer ${token}` } : {})
 });
 
 const encodeContent = (content) => btoa(unescape(encodeURIComponent(content)));
+
+const fetchWithTimeout = async (url, options = {}) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('GitHub did not respond within 15 seconds. Check your connection and try again.');
+    }
+    throw new Error('Could not connect to GitHub. Check your connection and try again.');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
 
 export const githubSyncService = {
   getConfig,
@@ -44,7 +61,7 @@ export const githubSyncService = {
       return null;
     }
 
-    const response = await fetch(`${getRawUrl(config)}?t=${Date.now()}`);
+    const response = await fetchWithTimeout(`${getRawUrl(config)}?t=${Date.now()}`);
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`GitHub read failed (${response.status}).`);
 
@@ -60,7 +77,7 @@ export const githubSyncService = {
     }
 
     const apiUrl = getApiUrl(config);
-    const currentResponse = await fetch(apiUrl, { headers: getHeaders(config.token) });
+    const currentResponse = await fetchWithTimeout(apiUrl, { headers: getHeaders(config.token) });
     let sha;
 
     if (currentResponse.ok) {
@@ -69,7 +86,7 @@ export const githubSyncService = {
       throw new Error(`GitHub file lookup failed (${currentResponse.status}).`);
     }
 
-    const response = await fetch(apiUrl, {
+    const response = await fetchWithTimeout(apiUrl, {
       method: 'PUT',
       headers: { ...getHeaders(config.token), 'Content-Type': 'application/json' },
       body: JSON.stringify({
